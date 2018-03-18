@@ -29,7 +29,7 @@ provider:
       Resource:
         - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
         - { "Fn::GetAtt": ["MetricsDynamoDBTable", "Arn" ] }
-        - { "Fn: GetAtt": ["CommentsDynamoDBTable", "Arn" ] }
+        - { "Fn::GetAtt": ["CommentsDynamoDBTable", "Arn" ] }
   environment:
     USERS_TABLE: ${self:custom.usersTableName}
     METRICS_TABLE: ${self:custom.metricsTableName}
