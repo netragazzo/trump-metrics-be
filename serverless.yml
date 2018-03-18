@@ -1,0 +1,98 @@
+service: trump-metrics
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  usersTableName: 'users-table-${self:provider.stage}'
+  metricsTableName: 'metrics-table-${self:provider.stage}'
+  commentsTableName: 'comments-table-${self:provider.stage}'
+  dynamodb:
+    start:
+      migrate: true
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: dev
+  region: us-west-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+        - { "Fn::GetAtt": ["MetricsDynamoDBTable", "Arn" ] }
+        - { "Fn: GetAtt": ["CommentsDynamoDBTable", "Arn" ] }
+  environment:
+    USERS_TABLE: ${self:custom.usersTableName}
+    METRICS_TABLE: ${self:custom.metricsTableName}
+    COMMENTS_TABLE: ${self:custom.commentsTableName}
+
+functions:
+  app:
+    handler: index.handler
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+
+resources:
+  Resources:
+    UsersDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.usersTableName}
+    MetricsDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: metricId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: metricId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.metricsTableName}
+    CommentsDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: metricId
+            AttributeType: S
+          -
+            AttributeName: date
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: metricId
+            KeyType: HASH
+          -
+            AttributeName: date
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.commentsTableName}
+
